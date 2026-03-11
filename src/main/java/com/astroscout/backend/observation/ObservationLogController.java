@@ -10,9 +10,11 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,9 +50,41 @@ public class ObservationLogController {
             Boolean isPublic
     ) {}
 
+    public record UpdateLogRequest(
+            @NotBlank String title,
+            String description,
+            @NotNull Instant observedAt,
+            String locationName,
+            @NotNull Double lat,
+            @NotNull Double lng,
+            Integer bortleScale,
+            String weatherCondition,
+            Integer seeingRating,
+            Boolean isPublic
+    ) {}
+
     public record ObservationLogResponse(
             Long id,
             Long userId,
+            String title,
+            String description,
+            Instant observedAt,
+            String locationName,
+            Double lat,
+            Double lng,
+            Integer bortleScale,
+            String weatherCondition,
+            Integer seeingRating,
+            Boolean isPublic,
+            Instant createdAt,
+            Instant updatedAt
+    ) {}
+
+    /** Response for single log detail; includes username for display. */
+    public record LogDetailResponse(
+            Long id,
+            Long userId,
+            String username,
             String title,
             String description,
             Instant observedAt,
@@ -88,7 +122,6 @@ public class ObservationLogController {
         log.setIsPublic(request.isPublic() != null ? request.isPublic() : Boolean.TRUE);
 
         ObservationLog saved = observationLogRepository.save(log);
-
         ObservationLogResponse response = toResponse(saved);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -108,7 +141,68 @@ public class ObservationLogController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ObservationLogResponse> getById(
+    public ResponseEntity<LogDetailResponse> getById(
+            Authentication authentication,
+            @PathVariable Long id
+    ) {
+        ObservationLog log = observationLogRepository.findById(id)
+                .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + id));
+
+        boolean isAuthenticated = authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal());
+        if (isAuthenticated) {
+            String email = (String) authentication.getPrincipal();
+            User currentUser = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+            boolean isOwner = log.getUser().getId().equals(currentUser.getId());
+            boolean isPublic = Boolean.TRUE.equals(log.getIsPublic());
+            if (!isOwner && !isPublic) {
+                throw new AccessDeniedException("You are not allowed to view this log");
+            }
+        } else {
+            if (!Boolean.TRUE.equals(log.getIsPublic())) {
+                throw new ObservationLogNotFoundException("Observation log not found with id " + id);
+            }
+        }
+
+        LogDetailResponse response = toDetailResponse(log);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<LogDetailResponse> update(
+            Authentication authentication,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateLogRequest request
+    ) {
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+
+        ObservationLog log = observationLogRepository.findById(id)
+                .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + id));
+
+        if (!log.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You are not allowed to edit this log");
+        }
+
+        log.setTitle(request.title());
+        log.setDescription(request.description());
+        log.setObservedAt(request.observedAt());
+        log.setLocationName(request.locationName());
+        log.setLat(request.lat());
+        log.setLng(request.lng());
+        log.setBortleScale(request.bortleScale());
+        log.setWeatherCondition(request.weatherCondition());
+        log.setSeeingRating(request.seeingRating());
+        log.setIsPublic(request.isPublic() != null ? request.isPublic() : Boolean.TRUE);
+
+        ObservationLog saved = observationLogRepository.save(log);
+        return ResponseEntity.ok(toDetailResponse(saved));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
             Authentication authentication,
             @PathVariable Long id
     ) {
@@ -119,20 +213,41 @@ public class ObservationLogController {
         ObservationLog log = observationLogRepository.findById(id)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + id));
 
-        boolean isOwner = log.getUser().getId().equals(currentUser.getId());
-        boolean isPublic = Boolean.TRUE.equals(log.getIsPublic());
-        if (!isOwner && !isPublic) {
-            throw new AccessDeniedException("You are not allowed to view this log");
+        if (!log.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete this log");
         }
 
-        ObservationLogResponse response = toResponse(log);
-        return ResponseEntity.ok(response);
+        observationLogRepository.delete(log);
+        return ResponseEntity.noContent().build();
     }
 
     private ObservationLogResponse toResponse(ObservationLog log) {
         return new ObservationLogResponse(
                 log.getId(),
                 log.getUser().getId(),
+                log.getTitle(),
+                log.getDescription(),
+                log.getObservedAt(),
+                log.getLocationName(),
+                log.getLat(),
+                log.getLng(),
+                log.getBortleScale(),
+                log.getWeatherCondition(),
+                log.getSeeingRating(),
+                log.getIsPublic(),
+                log.getCreatedAt(),
+                log.getUpdatedAt()
+        );
+    }
+
+    private LogDetailResponse toDetailResponse(ObservationLog log) {
+        String username = log.getUser().getUsername() != null
+                ? log.getUser().getUsername()
+                : "User " + log.getUser().getId();
+        return new LogDetailResponse(
+                log.getId(),
+                log.getUser().getId(),
+                username,
                 log.getTitle(),
                 log.getDescription(),
                 log.getObservedAt(),

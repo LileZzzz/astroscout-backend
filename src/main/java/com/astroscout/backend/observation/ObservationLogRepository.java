@@ -1,5 +1,7 @@
 package com.astroscout.backend.observation;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,6 +11,8 @@ public interface ObservationLogRepository extends JpaRepository<ObservationLog, 
     List<ObservationLog> findByUser_Id(Long userId);
 
     List<ObservationLog> findByIsPublicTrueOrderByCreatedAtDesc();
+
+    Page<ObservationLog> findByIsPublicTrueOrderByCreatedAtDesc(Pageable pageable);
 
     boolean existsById(Long id);
 }

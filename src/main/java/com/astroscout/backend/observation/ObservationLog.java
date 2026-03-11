@@ -53,7 +53,7 @@ public class ObservationLog {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    protected ObservationLog() {
+    public ObservationLog() {
     }
 
     @PrePersist

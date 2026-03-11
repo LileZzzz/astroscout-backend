@@ -81,5 +81,27 @@ public class LogLikeController {
         long count = logLikeRepository.countByLog_Id(logId);
         return ResponseEntity.ok(count);
     }
+
+    @GetMapping("/{logId}/likes/me")
+    public ResponseEntity<LikedResponse> me(
+            Authentication authentication,
+            @PathVariable Long logId
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.ok(new LikedResponse(false));
+        }
+        String email = (String) authentication.getPrincipal();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.ok(new LikedResponse(false));
+        }
+        if (!observationLogRepository.existsById(logId)) {
+            throw new ObservationLogNotFoundException("Observation log not found with id " + logId);
+        }
+        boolean liked = logLikeRepository.findByLog_IdAndUser_Id(logId, user.getId()).isPresent();
+        return ResponseEntity.ok(new LikedResponse(liked));
+    }
+
+    public record LikedResponse(boolean liked) {}
 }
 

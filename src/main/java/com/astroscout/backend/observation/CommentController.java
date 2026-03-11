@@ -1,5 +1,6 @@
 package com.astroscout.backend.observation;
 
+import com.astroscout.backend.common.AccessDeniedException;
 import com.astroscout.backend.common.ObservationLogNotFoundException;
 import com.astroscout.backend.user.User;
 import com.astroscout.backend.user.UserRepository;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -78,6 +80,46 @@ public class CommentController {
                 .toList();
 
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> count(@PathVariable Long logId) {
+        if (!observationLogRepository.existsById(logId)) {
+            throw new ObservationLogNotFoundException("Observation log not found with id " + logId);
+        }
+
+        long count = commentRepository.countByLog_Id(logId);
+        return ResponseEntity.ok(count);
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> delete(
+            Authentication authentication,
+            @PathVariable Long logId,
+            @PathVariable Long commentId
+    ) {
+        String email = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+
+        ObservationLog log = observationLogRepository.findById(logId)
+                .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + logId));
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found with id " + commentId));
+
+        if (!comment.getLog().getId().equals(log.getId())) {
+            throw new IllegalArgumentException("Comment does not belong to the specified log");
+        }
+
+        boolean isCommentAuthor = comment.getUser().getId().equals(currentUser.getId());
+        boolean isLogOwner = log.getUser().getId().equals(currentUser.getId());
+        if (!isCommentAuthor && !isLogOwner) {
+            throw new AccessDeniedException("You are not allowed to delete this comment");
+        }
+
+        commentRepository.delete(comment);
+        return ResponseEntity.noContent().build();
     }
 
     private CommentResponse toResponse(Comment comment) {
