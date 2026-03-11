@@ -7,6 +7,15 @@ import java.time.LocalDate;
 @Service
 public class ObservationScoreService {
 
+    private final OpenMeteoWeatherService weatherService;
+    private final LightPollutionService lightPollutionService;
+
+    public ObservationScoreService(OpenMeteoWeatherService weatherService,
+                                   LightPollutionService lightPollutionService) {
+        this.weatherService = weatherService;
+        this.lightPollutionService = lightPollutionService;
+    }
+
     public record WeatherData(
             int cloudCoverPercent, // 0-100
             double visibilityKm,   // e.g. 0-20
@@ -36,10 +45,9 @@ public class ObservationScoreService {
     ) {}
 
     public ScoreBreakdown score(double lat, double lng, LocalDate date) {
-        // TODO: replace stubs with real external API calls
-        WeatherData weather = stubWeather(lat, lng, date);
-        AstronomyData astronomy = stubAstronomy(lat, lng, date);
-        LightPollutionData lightPollution = stubLightPollution(lat, lng);
+        WeatherData weather = weatherService.getWeather(lat, lng, date);
+        AstronomyData astronomy = computeAstronomyFromDate(date);
+        LightPollutionData lightPollution = lightPollutionService.getLightPollution(lat, lng);
 
         double cloudScore = computeCloudScore(weather.cloudCoverPercent());
         double moonScore = computeMoonScore(astronomy.moonPhase());
@@ -66,36 +74,41 @@ public class ObservationScoreService {
         );
     }
 
-    private WeatherData stubWeather(double lat, double lng, LocalDate date) {
-        // Simple stub: slightly better weather at lower latitudes
-        int clouds = 20;
-        double visibility = 15.0;
-        int humidity = 40;
-        double wind = 3.0;
-        return new WeatherData(clouds, visibility, humidity, wind);
+    public AstronomyData astronomyForDate(LocalDate date) {
+        return computeAstronomyFromDate(date);
     }
 
-    private AstronomyData stubAstronomy(double lat, double lng, LocalDate date) {
-        // Simple stub: alternate between new and quarter moon based on day of month
-        int day = date.getDayOfMonth();
-        double phase = switch (day % 4) {
-            case 0 -> 0.0;  // new
-            case 1 -> 0.25; // first quarter
-            case 2 -> 0.5;  // half
-            default -> 0.75; // gibbous
-        };
-        String label = switch (day % 4) {
-            case 0 -> "New Moon";
-            case 1 -> "First Quarter";
-            case 2 -> "Half Moon";
-            default -> "Gibbous Moon";
-        };
-        return new AstronomyData(phase, label);
-    }
-
-    private LightPollutionData stubLightPollution(double lat, double lng) {
-        // Simple stub: treat everything as Bortle 3
-        return new LightPollutionData(3);
+    private AstronomyData computeAstronomyFromDate(LocalDate date) {
+        // Simple local moon phase approximation:
+        // Reference new moon: 2000-01-06 (common reference in algorithms),
+        // synodic month ~ 29.530588 days.
+        LocalDate reference = LocalDate.of(2000, 1, 6);
+        long daysSince = reference.until(date).getDays();
+        double synodicMonth = 29.530588;
+        double phase = (daysSince % synodicMonth) / synodicMonth;
+        if (phase < 0) {
+            phase += 1.0;
+        }
+        double normalized = Math.max(0.0, Math.min(1.0, phase));
+        String label;
+        if (normalized < 0.0625 || normalized >= 0.9375) {
+            label = "New Moon";
+        } else if (normalized < 0.25) {
+            label = "Waxing Crescent";
+        } else if (normalized < 0.3125) {
+            label = "First Quarter";
+        } else if (normalized < 0.5) {
+            label = "Waxing Gibbous";
+        } else if (normalized < 0.5625) {
+            label = "Full Moon";
+        } else if (normalized < 0.75) {
+            label = "Waning Gibbous";
+        } else if (normalized < 0.8125) {
+            label = "Last Quarter";
+        } else {
+            label = "Waning Crescent";
+        }
+        return new AstronomyData(normalized, label);
     }
 
     private double computeCloudScore(int cloudPercent) {

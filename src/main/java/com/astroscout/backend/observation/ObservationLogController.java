@@ -104,6 +104,13 @@ public class ObservationLogController {
             Authentication authentication,
             @Valid @RequestBody CreateLogRequest request
     ) {
+        if (request.lat() < -90.0 || request.lat() > 90.0) {
+            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
+        }
+        if (request.lng() < -180.0 || request.lng() > 180.0) {
+            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
+        }
+
         String email = (String) authentication.getPrincipal();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
@@ -175,6 +182,13 @@ public class ObservationLogController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateLogRequest request
     ) {
+        if (request.lat() < -90.0 || request.lat() > 90.0) {
+            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
+        }
+        if (request.lng() < -180.0 || request.lng() > 180.0) {
+            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
+        }
+
         String email = (String) authentication.getPrincipal();
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
