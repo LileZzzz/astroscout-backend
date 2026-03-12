@@ -219,6 +219,19 @@ public class CelestialCatalogService {
         return visible;
     }
 
+    /**
+     * Returns a plain-text summary of the celestial catalog for RAG context
+     * (e.g. to include in an LLM prompt). No coordinates, just names and descriptions.
+     */
+    public String getCatalogContextForRag() {
+        StringBuilder sb = new StringBuilder();
+        for (CelestialObject o : catalog) {
+            sb.append("- ").append(o.name()).append(" (").append(o.type()).append("): ")
+                    .append(o.description()).append("\n");
+        }
+        return sb.toString();
+    }
+
     private static double localSiderealTimeHours(ZonedDateTime utc, double lngDeg) {
         ZonedDateTime j2000 = ZonedDateTime.of(
                 2000, 1, 1,

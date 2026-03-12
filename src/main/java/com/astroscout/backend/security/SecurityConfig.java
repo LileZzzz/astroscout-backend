@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/logs/*/comments").permitAll()
                         .requestMatchers("/api/logs/*/likes/count").permitAll()
                         .requestMatchers("/api/logs/*/comments/count").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 );
