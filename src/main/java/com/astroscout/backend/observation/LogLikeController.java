@@ -37,9 +37,9 @@ public class LogLikeController {
             Authentication authentication,
             @PathVariable Long logId
     ) {
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(logId)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + logId));
@@ -60,9 +60,9 @@ public class LogLikeController {
             Authentication authentication,
             @PathVariable Long logId
     ) {
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(logId)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + logId));
@@ -90,8 +90,8 @@ public class LogLikeController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.ok(new LikedResponse(false));
         }
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email).orElse(null);
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
             return ResponseEntity.ok(new LikedResponse(false));
         }

@@ -62,12 +62,7 @@ public class ObserveController {
             @RequestParam double lng,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        if (lat < -90.0 || lat > 90.0) {
-            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
-        }
-        if (lng < -180.0 || lng > 180.0) {
-            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
-        }
+        validatePlannerInput(lat, lng, date);
 
         var breakdown = observationScoreService.score(lat, lng, date);
         ScoreResponse response = new ScoreResponse(
@@ -90,12 +85,7 @@ public class ObserveController {
             @RequestParam double lng,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        if (lat < -90.0 || lat > 90.0) {
-            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
-        }
-        if (lng < -180.0 || lng > 180.0) {
-            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
-        }
+        validatePlannerInput(lat, lng, date);
 
         var windows = bestWindowService.computeBestWindows(lat, lng, date);
         var response = windows.stream()
@@ -117,12 +107,7 @@ public class ObserveController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time
     ) {
-        if (lat < -90.0 || lat > 90.0) {
-            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
-        }
-        if (lng < -180.0 || lng > 180.0) {
-            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
-        }
+        validatePlannerInput(lat, lng, date);
 
         var visible = celestialCatalogService.computeVisible(lat, lng, date, time);
         var response = visible.stream()
@@ -138,6 +123,18 @@ public class ObserveController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    private void validatePlannerInput(double lat, double lng, LocalDate date) {
+        if (lat < -90.0 || lat > 90.0) {
+            throw new IllegalArgumentException("Latitude must be between -90 and 90 degrees.");
+        }
+        if (lng < -180.0 || lng > 180.0) {
+            throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
+        }
+        if (date.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Planner date must be today or later.");
+        }
     }
 }
 

@@ -23,7 +23,7 @@ public class AiChatController {
      */
     @PostMapping("/chat")
     public ResponseEntity<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
-        String answer = aiChatService.chat(request.message());
+        String answer = aiChatService.chat(request);
         return ResponseEntity.ok(new ChatResponse(answer));
     }
 }

@@ -29,6 +29,9 @@ public class ObservationLog {
     @Column(name = "location_name", length = 200)
     private String locationName;
 
+    @Column(name = "cover_image_url", length = 1000)
+    private String coverImageUrl;
+
     @Column(nullable = false)
     private Double lat;
 
@@ -115,6 +118,14 @@ public class ObservationLog {
 
     public void setLocationName(String locationName) {
         this.locationName = locationName;
+    }
+
+    public String getCoverImageUrl() {
+        return coverImageUrl;
+    }
+
+    public void setCoverImageUrl(String coverImageUrl) {
+        this.coverImageUrl = coverImageUrl;
     }
 
     public Double getLat() {

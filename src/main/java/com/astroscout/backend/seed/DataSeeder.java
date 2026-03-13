@@ -72,12 +72,12 @@ public class DataSeeder implements CommandLineRunner {
     private List<User> seedUsers() {
         String hash = passwordEncoder.encode(SEED_PASSWORD);
         List<User> users = List.of(
-                new User("celeste.vega@example.com", hash, "CelesteVega"),
-                new User("orion.nebula@example.com", hash, "OrionNebula"),
-                new User("luna.stargazer@example.com", hash, "LunaStargazer"),
-                new User("sirius.observer@example.com", hash, "SiriusObserver"),
-                new User("andromeda.sky@example.com", hash, "AndromedaSky"),
-                new User("admin@astroscout.example.com", hash, "AstroAdmin")
+                new User(hash, "CelesteVega"),
+                new User(hash, "OrionNebula"),
+                new User(hash, "LunaStargazer"),
+                new User(hash, "SiriusObserver"),
+                new User(hash, "AndromedaSky"),
+                new User(hash, "AstroAdmin")
         );
         users = userRepository.saveAll(users);
         User admin = users.get(users.size() - 1);
@@ -99,47 +99,47 @@ public class DataSeeder implements CommandLineRunner {
         // Original 8 logs
         logs.add(createLog(u1, "Jupiter and Galilean Moons at 8-inch Dob",
                 "Clear view of Io, Europa, Ganymede, and Callisto. Great seeing, Bortle 4. Jupiter's bands very distinct.",
-                base.plus(12, ChronoUnit.DAYS), "Blue Ridge Overlook, VA", 37.5, -79.0, 4, "Clear", 8, true));
+                base.plus(12, ChronoUnit.DAYS), "Blue Ridge Overlook, VA", "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1400&q=80", 37.5, -79.0, 4, "Clear", 8, true));
         logs.add(createLog(u2, "First light: M31 Andromeda Galaxy",
                 "First session with the new 10-inch. Andromeda core and dust lanes visible. M32 and M110 in same field.",
-                base.plus(10, ChronoUnit.DAYS), "Cherry Springs State Park, PA", 41.66, -77.82, 2, "Clear", 9, true));
+                base.plus(10, ChronoUnit.DAYS), "Cherry Springs State Park, PA", "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1400&q=80", 41.66, -77.82, 2, "Clear", 9, true));
         logs.add(createLog(u3, "Perseid meteor shower peak",
                 "Counted 87 meteors in 90 minutes. Several fireballs. Milky Way overhead.",
-                base.plus(8, ChronoUnit.DAYS), "Death Valley National Park", 36.5, -117.0, 1, "Clear", 10, true));
+                base.plus(8, ChronoUnit.DAYS), "Death Valley National Park", "https://images.unsplash.com/photo-1532968961962-8a0cb3a2d4f5?auto=format&fit=crop&w=1400&q=80", 36.5, -117.0, 1, "Clear", 10, true));
         logs.add(createLog(u4, "Lunar eclipse totality",
                 "Full totality at 3:47 AM. Copper-red disk, no scope needed. Neighbors joined in the driveway.",
-                base.plus(5, ChronoUnit.DAYS), "Backyard, suburban Bortle 6", 40.7, -74.0, 6, "Clear", 7, true));
+                base.plus(5, ChronoUnit.DAYS), "Backyard, suburban Bortle 6", "https://images.unsplash.com/photo-1502139214982-d0ad755818d8?auto=format&fit=crop&w=1400&q=80", 40.7, -74.0, 6, "Clear", 7, true));
         logs.add(createLog(u5, "M42 Orion Nebula through 6-inch refractor",
                 "Trapezium resolved, nebulosity extended. Used O-III filter for outer regions.",
-                base.plus(3, ChronoUnit.DAYS), "Dark Sky Campground, TX", 30.5, -99.2, 3, "Clear", 8, true));
+                base.plus(3, ChronoUnit.DAYS), "Dark Sky Campground, TX", "https://images.unsplash.com/photo-1538370965046-79c0d6907d47?auto=format&fit=crop&w=1400&q=80", 30.5, -99.2, 3, "Clear", 8, true));
         logs.add(createLog(u1, "Saturn ring tilt and Titan",
                 "Rings at good angle. Titan visible as dot. Seeing 7/10.",
-                base.plus(1, ChronoUnit.DAYS), "Rural backyard, OH", 41.2, -81.5, 4, "Stable", 7, true));
+                base.plus(1, ChronoUnit.DAYS), "Rural backyard, OH", "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1400&q=80", 41.2, -81.5, 4, "Stable", 7, true));
         logs.add(createLog(u2, "Double Cluster in Perseus",
                 "Both NGC 869 and 884 in same low-power field. Stunning in 20x80 binos.",
-                base, "Adirondack Dark Sky Site", 44.0, -74.0, 3, "Clear", 8, true));
+                base, "Adirondack Dark Sky Site", "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1400&q=80", 44.0, -74.0, 3, "Clear", 8, true));
         logs.add(createLog(u3, "Private test log", "Not for feed.",
-                base.plus(6, ChronoUnit.DAYS), "Home", 42.0, -71.0, 7, "Cloudy", 4, false));
+                base.plus(6, ChronoUnit.DAYS), "Home", null, 42.0, -71.0, 7, "Cloudy", 4, false));
 
         // 22 more logs (30 total, 29 public)
         logs.add(createLog(u4, "Venus and Mercury at dawn",
                 "Pair nicely in the east. Mercury harder to spot but both clear in 10x50.",
-                base.plus(11, ChronoUnit.DAYS), "Lakeshore, MI", 42.3, -83.0, 5, "Clear", 7, true));
+                base.plus(11, ChronoUnit.DAYS), "Lakeshore, MI", "https://images.unsplash.com/photo-1476610182048-b716b8518aae?auto=format&fit=crop&w=1400&q=80", 42.3, -83.0, 5, "Clear", 7, true));
         logs.add(createLog(u5, "M13 Hercules Cluster",
                 "Resolved to the core with 8-inch. Beautiful globular.",
-                base.plus(9, ChronoUnit.DAYS), "Big Bend, TX", 29.3, -103.2, 1, "Clear", 9, true));
+                base.plus(9, ChronoUnit.DAYS), "Big Bend, TX", "https://images.unsplash.com/photo-1464802686167-b939a6910659?auto=format&fit=crop&w=1400&q=80", 29.3, -103.2, 1, "Clear", 9, true));
         logs.add(createLog(u1, "ISS pass and Starlink train",
                 "Bright pass at -3 mag, then Starlink chain 10 min later. Kids loved it.",
-                base.plus(7, ChronoUnit.DAYS), "Denver suburbs", 39.7, -105.0, 6, "Clear", 6, true));
+                base.plus(7, ChronoUnit.DAYS), "Denver suburbs", "https://images.unsplash.com/photo-1465101162946-4377e57745c3?auto=format&fit=crop&w=1400&q=80", 39.7, -105.0, 6, "Clear", 6, true));
         logs.add(createLog(u2, "Pleiades and Hyades",
                 "M45 and Hyades in same binos field. Great for wide-field photography.",
-                base.plus(4, ChronoUnit.DAYS), "Joshua Tree, CA", 34.0, -116.0, 2, "Clear", 8, true));
+                base.plus(4, ChronoUnit.DAYS), "Joshua Tree, CA", "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1400&q=80", 34.0, -116.0, 2, "Clear", 8, true));
         logs.add(createLog(u3, "Mars near opposition",
                 "Red disk visible at 120x. Syrtis Major and polar cap hinted.",
-                base.plus(2, ChronoUnit.DAYS), "Chaco Canyon, NM", 36.0, -108.0, 1, "Clear", 9, true));
+                base.plus(2, ChronoUnit.DAYS), "Chaco Canyon, NM", "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80", 36.0, -108.0, 1, "Clear", 9, true));
         logs.add(createLog(u4, "Milky Way core from 9000 ft",
                 "Sagittarius region stunning. Dark site at altitude made a huge difference.",
-                base.plus(13, ChronoUnit.DAYS), "Cedar Breaks, UT", 37.6, -112.8, 2, "Clear", 10, true));
+                base.plus(13, ChronoUnit.DAYS), "Cedar Breaks, UT", "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1400&q=80", 37.6, -112.8, 2, "Clear", 10, true));
         logs.add(createLog(u5, "Comet C/2024 session",
                 "Faint but tail visible in 15x70. Tracked for an hour.",
                 base.plus(10, ChronoUnit.DAYS), "Mauna Kea visitor area", 19.8, -155.5, 2, "Clear", 9, true));
@@ -195,8 +195,15 @@ public class DataSeeder implements CommandLineRunner {
         return observationLogRepository.saveAll(logs);
     }
 
-    private ObservationLog createLog(User user, String title, String description,
+        private ObservationLog createLog(User user, String title, String description,
+                                                                        Instant observedAt, String locationName,
+                                                                        double lat, double lng, int bortle, String weather, int seeing, boolean isPublic) {
+                return createLog(user, title, description, observedAt, locationName, null, lat, lng, bortle, weather, seeing, isPublic);
+        }
+
+        private ObservationLog createLog(User user, String title, String description,
                                     Instant observedAt, String locationName,
+                                                                        String coverImageUrl,
                                     double lat, double lng, int bortle, String weather, int seeing, boolean isPublic) {
         ObservationLog log = new ObservationLog();
         log.setUser(user);
@@ -204,14 +211,19 @@ public class DataSeeder implements CommandLineRunner {
         log.setDescription(description);
         log.setObservedAt(observedAt);
         log.setLocationName(locationName);
+        log.setCoverImageUrl(coverImageUrl);
         log.setLat(lat);
         log.setLng(lng);
         log.setBortleScale(bortle);
         log.setWeatherCondition(weather);
-        log.setSeeingRating(seeing);
+                log.setSeeingRating(clampSeeing(seeing));
         log.setIsPublic(isPublic);
         return log;
     }
+
+        private int clampSeeing(int seeing) {
+                return Math.max(1, Math.min(5, seeing));
+        }
 
     private void seedLikesAndComments(List<User> users, List<ObservationLog> logs) {
         User u1 = users.get(0);

@@ -31,6 +31,7 @@ public class FeedController {
             String username,
             String title,
             String locationName,
+            String coverImageUrl,
             Instant observedAt,
             Boolean isPublic
     ) {}
@@ -44,7 +45,7 @@ public class FeedController {
     ) {
         int safeSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(page, safeSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        var pageResult = observationLogRepository.findByIsPublicTrueOrderByCreatedAtDesc(pageable);
+        var pageResult = observationLogRepository.findPublicFeedWithImage(pageable);
 
         List<FeedItemResponse> items = pageResult.getContent().stream()
                 .map(log -> new FeedItemResponse(
@@ -53,6 +54,7 @@ public class FeedController {
                         log.getUser().getUsername() != null ? log.getUser().getUsername() : "User " + log.getUser().getId(),
                         log.getTitle(),
                         log.getLocationName(),
+                        log.getCoverImageUrl(),
                         log.getObservedAt(),
                         log.getIsPublic()
                 ))

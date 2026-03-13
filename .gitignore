@@ -3,3 +3,5 @@ target/
 *.iml
 *.log
 .DS_Store
+uploads/
+.env.minimax.local

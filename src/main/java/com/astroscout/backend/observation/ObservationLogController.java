@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,13 +29,19 @@ public class ObservationLogController {
 
     private final ObservationLogRepository observationLogRepository;
     private final UserRepository userRepository;
+        private final LogLikeRepository logLikeRepository;
+        private final CommentRepository commentRepository;
 
     public ObservationLogController(
             ObservationLogRepository observationLogRepository,
-            UserRepository userRepository
+                        UserRepository userRepository,
+                        LogLikeRepository logLikeRepository,
+                        CommentRepository commentRepository
     ) {
         this.observationLogRepository = observationLogRepository;
         this.userRepository = userRepository;
+                this.logLikeRepository = logLikeRepository;
+                this.commentRepository = commentRepository;
     }
 
     public record CreateLogRequest(
@@ -42,6 +49,7 @@ public class ObservationLogController {
             String description,
             @NotNull Instant observedAt,
             String locationName,
+            String coverImageUrl,
             @NotNull Double lat,
             @NotNull Double lng,
             Integer bortleScale,
@@ -55,6 +63,7 @@ public class ObservationLogController {
             String description,
             @NotNull Instant observedAt,
             String locationName,
+            String coverImageUrl,
             @NotNull Double lat,
             @NotNull Double lng,
             Integer bortleScale,
@@ -70,6 +79,7 @@ public class ObservationLogController {
             String description,
             Instant observedAt,
             String locationName,
+            String coverImageUrl,
             Double lat,
             Double lng,
             Integer bortleScale,
@@ -89,6 +99,7 @@ public class ObservationLogController {
             String description,
             Instant observedAt,
             String locationName,
+            String coverImageUrl,
             Double lat,
             Double lng,
             Integer bortleScale,
@@ -98,6 +109,8 @@ public class ObservationLogController {
             Instant createdAt,
             Instant updatedAt
     ) {}
+
+    public record CleanupNoImageResponse(long deletedCount) {}
 
     @PostMapping
     public ResponseEntity<ObservationLogResponse> create(
@@ -111,9 +124,9 @@ public class ObservationLogController {
             throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
         }
 
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = new ObservationLog();
         log.setUser(user);
@@ -121,6 +134,7 @@ public class ObservationLogController {
         log.setDescription(request.description());
         log.setObservedAt(request.observedAt());
         log.setLocationName(request.locationName());
+        log.setCoverImageUrl(request.coverImageUrl());
         log.setLat(request.lat());
         log.setLng(request.lng());
         log.setBortleScale(request.bortleScale());
@@ -135,9 +149,9 @@ public class ObservationLogController {
 
     @GetMapping
     public ResponseEntity<List<ObservationLogResponse>> listForCurrentUser(Authentication authentication) {
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         List<ObservationLog> logs = observationLogRepository.findByUser_Id(user.getId());
         List<ObservationLogResponse> responses = logs.stream()
@@ -158,9 +172,9 @@ public class ObservationLogController {
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated()
                 && !"anonymousUser".equals(authentication.getPrincipal());
         if (isAuthenticated) {
-            String email = (String) authentication.getPrincipal();
-            User currentUser = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+            String username = (String) authentication.getPrincipal();
+            User currentUser = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
             boolean isOwner = log.getUser().getId().equals(currentUser.getId());
             boolean isPublic = Boolean.TRUE.equals(log.getIsPublic());
             if (!isOwner && !isPublic) {
@@ -189,9 +203,9 @@ public class ObservationLogController {
             throw new IllegalArgumentException("Longitude must be between -180 and 180 degrees.");
         }
 
-        String email = (String) authentication.getPrincipal();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(id)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + id));
@@ -204,6 +218,7 @@ public class ObservationLogController {
         log.setDescription(request.description());
         log.setObservedAt(request.observedAt());
         log.setLocationName(request.locationName());
+        log.setCoverImageUrl(request.coverImageUrl());
         log.setLat(request.lat());
         log.setLng(request.lng());
         log.setBortleScale(request.bortleScale());
@@ -220,9 +235,9 @@ public class ObservationLogController {
             Authentication authentication,
             @PathVariable Long id
     ) {
-        String email = (String) authentication.getPrincipal();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(id)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + id));
@@ -235,6 +250,39 @@ public class ObservationLogController {
         return ResponseEntity.noContent().build();
     }
 
+        @DeleteMapping("/cleanup/no-image")
+        @Transactional
+        public ResponseEntity<CleanupNoImageResponse> deleteNoImageLogs(Authentication authentication) {
+                String username = (String) authentication.getPrincipal();
+                User currentUser = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
+
+                List<ObservationLog> noImageLogs = observationLogRepository.findNoImageLogsByUserId(currentUser.getId());
+                long deleted = noImageLogs.size();
+                if (!noImageLogs.isEmpty()) {
+                        List<Long> logIds = noImageLogs.stream().map(ObservationLog::getId).toList();
+                        commentRepository.deleteByLog_IdIn(logIds);
+                        logLikeRepository.deleteByLog_IdIn(logIds);
+                        observationLogRepository.deleteAll(noImageLogs);
+                }
+
+                return ResponseEntity.ok(new CleanupNoImageResponse(deleted));
+        }
+
+        @DeleteMapping("/cleanup/no-image/all")
+        @Transactional
+        public ResponseEntity<CleanupNoImageResponse> deleteAllNoImageLogs(Authentication authentication) {
+                List<ObservationLog> noImageLogs = observationLogRepository.findAllNoImageLogs();
+                long deleted = noImageLogs.size();
+                if (!noImageLogs.isEmpty()) {
+                        List<Long> logIds = noImageLogs.stream().map(ObservationLog::getId).toList();
+                        commentRepository.deleteByLog_IdIn(logIds);
+                        logLikeRepository.deleteByLog_IdIn(logIds);
+                        observationLogRepository.deleteAll(noImageLogs);
+                }
+                return ResponseEntity.ok(new CleanupNoImageResponse(deleted));
+        }
+
     private ObservationLogResponse toResponse(ObservationLog log) {
         return new ObservationLogResponse(
                 log.getId(),
@@ -243,6 +291,7 @@ public class ObservationLogController {
                 log.getDescription(),
                 log.getObservedAt(),
                 log.getLocationName(),
+                log.getCoverImageUrl(),
                 log.getLat(),
                 log.getLng(),
                 log.getBortleScale(),
@@ -266,6 +315,7 @@ public class ObservationLogController {
                 log.getDescription(),
                 log.getObservedAt(),
                 log.getLocationName(),
+                log.getCoverImageUrl(),
                 log.getLat(),
                 log.getLng(),
                 log.getBortleScale(),

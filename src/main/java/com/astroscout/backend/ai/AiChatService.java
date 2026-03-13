@@ -34,7 +34,7 @@ public class AiChatService {
     private static final Logger log = LoggerFactory.getLogger(AiChatService.class);
 
     private static final String SYSTEM_CONTEXT = """
-            You are a friendly astronomy assistant for AstroScout. Answer questions about observing,
+            You are AstroScoutAssistant, a friendly astronomy assistant for AstroScout. Answer questions about observing,
             celestial objects, and stargazing based on the following reference data. Keep answers concise
             and practical. If the user asks about visibility or location, use the catalog below; if they
             ask about something not in the data, say so and give general advice where appropriate.
@@ -58,16 +58,31 @@ public class AiChatService {
      * If no LLM is configured (missing API key), returns a stub message.
      */
     public String chat(String userMessage) {
+        ChatRequest request = new ChatRequest(userMessage, null, null, null, null, null, null, null, null);
+        return chat(request);
+    }
+
+    /**
+     * Process user message with optional planner context (lat/lng/date/weather/score/targets)
+     * injected into the prompt, so responses can be practical and location-aware.
+     */
+    public String chat(ChatRequest request) {
         if (chatModel == null) {
-            return "AI chat is not configured. Set spring.ai.openai.api-key (or OPENAI_API_KEY) to enable astronomy Q&A.";
+            return "AI chat is not configured. Configure provider and key (openai or anthropic). For MiniMax Anthropic-compatible setup, load .env.minimax.local before starting backend.";
         }
         try {
             String context = catalogService.getCatalogContextForRag();
-            String systemContent = SYSTEM_CONTEXT + "\n\nReference celestial data:\n" + context;
+            String plannerContext = buildPlannerContext(request);
+            String systemContent = SYSTEM_CONTEXT
+                    + "\n\nReference celestial data:\n"
+                    + context
+                    + "\n\nPlanner context (if provided by user workflow):\n"
+                    + plannerContext
+                    + "\n\nWhen planner context is present, prioritize practical suggestions based on that context.";
 
             Prompt prompt = new Prompt(
                     new SystemMessage(systemContent),
-                    new UserMessage(userMessage)
+                    new UserMessage(request.message())
             );
             ChatResponse response = chatModel.call(prompt);
             // Spring AI Anthropic puts raw ChatCompletionResponse in metadata; extract only TEXT blocks (no thinking).
@@ -93,13 +108,48 @@ public class AiChatService {
             }
             return toPlainText(stripReasoningPrefix(Objects.requireNonNull(text)));
         } catch (Exception e) {
-            log.warn("AI chat failed for user message: {}", userMessage, e);
+            log.warn("AI chat failed for user message: {}", request.message(), e);
             String msg = e.getMessage() != null ? e.getMessage() : "";
             if (msg.contains("429") || msg.toLowerCase().contains("rate limit")) {
                 return "The free model is rate limited. Please wait a moment and try again.";
             }
             return "The astronomy assistant is temporarily unavailable. Please try again later. (Error: " + msg + ")";
         }
+    }
+
+    private String buildPlannerContext(ChatRequest request) {
+        if (request == null) {
+            return "No planner context provided.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (request.lat() != null && request.lng() != null) {
+            sb.append("- Coordinates: lat=").append(request.lat())
+                    .append(", lng=").append(request.lng()).append("\n");
+        }
+        if (request.date() != null && !request.date().isBlank()) {
+            sb.append("- Date: ").append(request.date()).append("\n");
+        }
+        if (request.score() != null) {
+            sb.append("- Observe score: ").append(request.score()).append("/100\n");
+        }
+        if (request.weatherSummary() != null && !request.weatherSummary().isBlank()) {
+            sb.append("- Weather summary: ").append(request.weatherSummary()).append("\n");
+        }
+        if (request.moonPhaseLabel() != null && !request.moonPhaseLabel().isBlank()) {
+            sb.append("- Moon phase: ").append(request.moonPhaseLabel()).append("\n");
+        }
+        if (request.bortleScale() != null) {
+            sb.append("- Bortle scale: ").append(request.bortleScale()).append("\n");
+        }
+        if (request.targetSummary() != null && !request.targetSummary().isBlank()) {
+            sb.append("- Suggested targets: ").append(request.targetSummary()).append("\n");
+        }
+
+        if (sb.isEmpty()) {
+            return "No planner context provided.";
+        }
+        return sb.toString().strip();
     }
 
     /**

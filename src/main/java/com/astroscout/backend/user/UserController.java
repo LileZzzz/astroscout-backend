@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @GetMapping("/me")
+    @GetMapping("/whoami")
     public ResponseEntity<String> me(Authentication authentication) {
-        String email = (String) authentication.getPrincipal();
-        return ResponseEntity.ok("You are " + email);
+        String username = (String) authentication.getPrincipal();
+        return ResponseEntity.ok("You are " + username);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

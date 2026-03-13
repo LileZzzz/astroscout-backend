@@ -54,9 +54,9 @@ public class CommentController {
             @PathVariable Long logId,
             @Valid @RequestBody CreateCommentRequest request
     ) {
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(logId)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + logId));
@@ -98,9 +98,9 @@ public class CommentController {
             @PathVariable Long logId,
             @PathVariable Long commentId
     ) {
-        String email = (String) authentication.getPrincipal();
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found for email " + email));
+        String username = (String) authentication.getPrincipal();
+        User currentUser = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for username " + username));
 
         ObservationLog log = observationLogRepository.findById(logId)
                 .orElseThrow(() -> new ObservationLogNotFoundException("Observation log not found with id " + logId));
