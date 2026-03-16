@@ -4,4 +4,4 @@ target/
 *.log
 .DS_Store
 uploads/
-.env.minimax.local
+.env.gemini.local

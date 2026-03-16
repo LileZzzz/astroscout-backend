@@ -17,5 +17,7 @@ public record ChatRequest(
         String moonPhaseLabel,
         Integer bortleScale,
         @Size(max = 1200)
-        String targetSummary
+        String targetSummary,
+        @Size(max = 1200)
+        String bestWindowSummary
 ) {}

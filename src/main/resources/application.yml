@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/astroscout}"
+    username: "${SPRING_DATASOURCE_USERNAME:postgres}"
+    password: "${SPRING_DATASOURCE_PASSWORD:postgres}"
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: "${SPRING_DATA_REDIS_HOST:localhost}"
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  ai:
+    openai:
+      api-key: "${ASTROSCOUT_OPENAI_API_KEY:}"
+      # Gemini AI Studio OpenAI-compatible endpoint
+      base-url: "${ASTROSCOUT_OPENAI_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai}"
+      chat:
+        completions-path: "${ASTROSCOUT_OPENAI_COMPLETIONS_PATH:/chat/completions}"
+        options:
+          model: "${ASTROSCOUT_OPENAI_MODEL:gemini-2.5-flash}"
+
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 8MB
+
+server:
+  port: ${SERVER_PORT:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+astroscout:
+  upload-dir: "${ASTROSCOUT_UPLOAD_DIR:uploads}"
